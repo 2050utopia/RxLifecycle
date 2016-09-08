@@ -1,31 +1,42 @@
 package com.trello.rxlifecycle.components.support;
 
 import android.os.Bundle;
+import android.support.annotation.CheckResult;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.View;
-import com.trello.rxlifecycle.FragmentEvent;
+import com.trello.rxlifecycle.LifecycleProvider;
+import com.trello.rxlifecycle.LifecycleTransformer;
 import com.trello.rxlifecycle.RxLifecycle;
-import com.trello.rxlifecycle.components.FragmentLifecycleProvider;
+import com.trello.rxlifecycle.android.FragmentEvent;
+import com.trello.rxlifecycle.android.RxLifecycleAndroid;
 import rx.Observable;
 import rx.subjects.BehaviorSubject;
 
-public class RxFragment extends Fragment implements FragmentLifecycleProvider {
+public class RxFragment extends Fragment implements LifecycleProvider<FragmentEvent> {
 
     private final BehaviorSubject<FragmentEvent> lifecycleSubject = BehaviorSubject.create();
 
     @Override
+    @NonNull
+    @CheckResult
     public final Observable<FragmentEvent> lifecycle() {
         return lifecycleSubject.asObservable();
     }
 
     @Override
-    public final <T> Observable.Transformer<? super T, ? extends T> bindUntilEvent(FragmentEvent event) {
-        return RxLifecycle.bindUntilFragmentEvent(lifecycleSubject, event);
+    @NonNull
+    @CheckResult
+    public final <T> LifecycleTransformer<T> bindUntilEvent(@NonNull FragmentEvent event) {
+        return RxLifecycle.bindUntilEvent(lifecycleSubject, event);
     }
 
     @Override
-    public final <T> Observable.Transformer<? super T, ? extends T> bindToLifecycle() {
-        return RxLifecycle.bindFragment(lifecycleSubject);
+    @NonNull
+    @CheckResult
+    public final <T> LifecycleTransformer<T> bindToLifecycle() {
+        return RxLifecycleAndroid.bindFragment(lifecycleSubject);
     }
 
     @Override
@@ -35,13 +46,13 @@ public class RxFragment extends Fragment implements FragmentLifecycleProvider {
     }
 
     @Override
-    public void onCreate(Bundle savedInstanceState) {
+    public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         lifecycleSubject.onNext(FragmentEvent.CREATE);
     }
 
     @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
+    public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         lifecycleSubject.onNext(FragmentEvent.CREATE_VIEW);
     }

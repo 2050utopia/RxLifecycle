@@ -16,8 +16,8 @@ package com.trello.rxlifecycle.components.support;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentActivity;
-import com.trello.rxlifecycle.FragmentEvent;
-import com.trello.rxlifecycle.components.FragmentLifecycleProvider;
+import com.trello.rxlifecycle.LifecycleProvider;
+import com.trello.rxlifecycle.android.FragmentEvent;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,7 +55,17 @@ public class RxSupportFragmentLifecycleTest {
         testBindToLifecycle(new RxDialogFragment());
     }
 
-    private void testLifecycle(FragmentLifecycleProvider provider) {
+    @Test
+    public void testRxAppCompatDialogFragment() {
+        // Once Robolectric is less broken we could run these tests
+        // Until then, these are identical to RxDialogFragment, so whatever.
+        //
+        // testLifecycle(new RxAppCompatDialogFragment());
+        // testBindUntilEvent(new RxAppCompatDialogFragment());
+        // testBindToLifecycle(new RxAppCompatDialogFragment());
+    }
+
+    private void testLifecycle(LifecycleProvider<FragmentEvent> provider) {
         Fragment fragment = (Fragment) provider;
         startFragment(fragment);
 
@@ -87,8 +97,8 @@ public class RxSupportFragmentLifecycleTest {
         );
     }
 
-    // Tests bindUntil for any given FragmentLifecycleProvider implementation
-    private void testBindUntilEvent(FragmentLifecycleProvider provider) {
+    // Tests bindUntil for any given LifecycleProvider<FragmentEvent> implementation
+    private void testBindUntilEvent(LifecycleProvider<FragmentEvent> provider) {
         Fragment fragment = (Fragment) provider;
         startFragment(fragment);
 
@@ -112,8 +122,8 @@ public class RxSupportFragmentLifecycleTest {
         testSubscriber.assertUnsubscribed();
     }
 
-    // Tests bindToLifecycle for any given FragmentLifecycleProvider implementation
-    private void testBindToLifecycle(FragmentLifecycleProvider provider) {
+    // Tests bindToLifecycle for any given LifecycleProvider<FragmentEvent> implementation
+    private void testBindToLifecycle(LifecycleProvider<FragmentEvent> provider) {
         Fragment fragment = (Fragment) provider;
         startFragment(fragment);
 

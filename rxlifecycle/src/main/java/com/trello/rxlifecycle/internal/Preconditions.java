@@ -12,18 +12,17 @@
  * limitations under the License.
  */
 
-package com.trello.rxlifecycle;
+package com.trello.rxlifecycle.internal;
 
-/**
- * Lifecycle events that can be emitted by Activities.
- */
-public enum ActivityEvent {
+public final class Preconditions {
+    public static <T> T checkNotNull(T value, String message) {
+        if (value == null) {
+            throw new NullPointerException(message);
+        }
+        return value;
+    }
 
-    CREATE,
-    START,
-    RESUME,
-    PAUSE,
-    STOP,
-    DESTROY
-
+    private Preconditions() {
+        throw new AssertionError("No instances.");
+    }
 }

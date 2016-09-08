@@ -1,13 +1,7 @@
-apply plugin: 'com.android.library'
+apply plugin: 'java'
 
-android {
-    compileSdkVersion rootProject.ext.compileSdkVersion
-    buildToolsVersion rootProject.ext.buildToolsVersion
-
-    defaultConfig {
-        minSdkVersion rootProject.ext.minSdkVersion
-    }
-}
+sourceCompatibility = rootProject.ext.sourceCompatibilityVersion
+targetCompatibility = rootProject.ext.targetCompatibilityVersion
 
 repositories {
     mavenCentral()
@@ -15,12 +9,25 @@ repositories {
 
 dependencies {
     compile rootProject.ext.rxJava
-    compile rootProject.ext.rxBinding
+    compile rootProject.ext.jsr305Annotations
 
     testCompile rootProject.ext.junit
-    testCompile rootProject.ext.mockito
-    testCompile rootProject.ext.robolectric
 }
 
-apply from: "$rootDir/gradle/artifacts.gradle"
+// Add sources/javadoc artifacts
+task sourcesJar(type: Jar, dependsOn:classes) {
+    classifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn:javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+artifacts {
+    archives sourcesJar
+    archives javadocJar
+}
+
 apply from: "$rootDir/gradle/gradle-mvn-push.gradle"

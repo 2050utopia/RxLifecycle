@@ -12,7 +12,7 @@ You can then end the sequence explicitly when an event occurs:
 
 ```java
 myObservable
-    .compose(RxLifecycle.bindUntilActivityEvent(lifecycle, ActivityEvent.DESTROY))
+    .compose(RxLifecycle.bindUntilEvent(lifecycle, ActivityEvent.DESTROY))
     .subscribe();
 ```
 
@@ -20,7 +20,7 @@ Alternatively, you can let RxLifecycle determine the appropriate time to end the
 
 ```java
 myObservable
-    .compose(RxLifecycle.bindActivity(lifecycle))
+    .compose(RxLifecycleAndroid.bindActivity(lifecycle))
     .subscribe();
 ```
 
@@ -28,10 +28,28 @@ It assumes you want to end the sequence in the opposing lifecycle event - e.g., 
 terminate on `STOP`. If you subscribe after `PAUSE`, it will terminate at the next destruction event (e.g.,
 `PAUSE` will terminate in `STOP`).
 
-## Components
+## Single and Completable
 
-Where do the sequences of `ActivityEvent` or `FragmentEvent` come from? You can either write it yourself, or you can
-include rxlifecycle-components, which comes with pre-built `Activity` and `Fragment` implementations with lifecycles.
+RxLifecycle supports both `Single` and `Completable` via the `LifecycleTransformer`. You can
+convert any returned `LifecycleTransformer` into a `Single.Transformer` or `CompletableTransformer`
+via the `forSingle()` and `forCompletable()` methods:
+
+```java
+mySingle
+    .compose(RxLifecycleAndroid.bindActivity(lifecycle).forSingle())
+    .subscribe();
+```
+
+## Providers
+
+Where do the sequences of `ActivityEvent` or `FragmentEvent` come from? Generally, they are provided by
+an appropriate `LifecycleProvider<T>`. But where are those implemented?
+
+You have a few options for that:
+
+1. Use rxlifecycle-components and subclass the provided `RxActivity`, `RxFragment`, etc. classes.
+1. Use [Navi](https://github.com/trello/navi/) + rxlifecycle-navi to generate providers.
+1. Write the implementation yourself.
 
 If you use rxlifecycle-components, just extend the appropriate class, then use the built-in `bindToLifecycle()` (or `bindUntilEvent()`) methods:
 
@@ -47,30 +65,71 @@ public class MyActivity extends RxActivity {
 }
 ```
 
-In addition, these components come with `lifecycle()`, which allows you to do your own logic based on the `Activity`
-or `Fragment` lifecycle.
+If you use rxlifecycle-navi, then you just pass your `NaviComponent` to `NaviLifecycle` to generate a provider:
+
+```java
+public class MyActivity extends NaviActivity {
+    private final LifecycleProvider<ActivityEvent> provider
+        = NaviLifecycle.createActivityLifecycleProvider(this);
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        myObservable
+            .compose(provider.bindToLifecycle())
+            .subscribe();
+    }
+}
+```
+
+If you want some Kotlin goodness, you can use built-in extensions:
+
+```java
+myObservable
+    .bindToLifecycle(myView)
+    .subscribe { }
+
+myObservable
+    .bindUntilEvent(myRxActivity, STOP)
+    .subscribe { }
+```
 
 ## Unsubscription
 
-RxLifecycle does not actually unsubscribe the sequence. It terminates it by emitting `onCompleted()`, which ends the
-sequence. This differs from `Subscription.unsubscribe()`, which causes the sequence to simply end.
+RxLifecycle does not actually unsubscribe the sequence. Instead it terminates the sequence. The way in which
+it does so varies based on the type:
 
-In most cases this works out fine (since `onCompleted()` is not often used). In cases where you do not want
-`onCompleted()` called during early termination, then it is suggested that you manually handle the `Subscription`
-yourself and call `unsubscribe()` when appropriate.
+- `Observable` - emits `onCompleted()`
+- `Single` and `Completable` - emits `onError(CancellationException)`
 
-(To understand why RxLifecycle has this behavior, [read this](https://github.com/trello/RxLifecycle/pull/14))
+If a sequence requires the `Subscription.unsubscribe()` behavior, then it is suggested that you manually handle
+the `Subscription` yourself and call `unsubscribe()` when appropriate.
 
 ## Installation
 
 ```gradle
-compile 'com.trello:rxlifecycle:0.3.0'
-compile 'com.trello:rxlifecycle-components:0.3.0'
+compile 'com.trello:rxlifecycle:0.7.0'
+
+// If you want to bind to Android-specific lifecycles
+compile 'com.trello:rxlifecycle-android:0.7.0'
+
+// If you want pre-written Activities and Fragments you can subclass as providers
+compile 'com.trello:rxlifecycle-components:0.7.0'
+
+// If you want to use Navi for providers
+compile 'com.trello:rxlifecycle-navi:0.7.0'
+
+// If you want to use Kotlin syntax
+compile 'com.trello:rxlifecycle-kotlin:0.7.0'
 ```
+
+## Related Libraries
+
+- [Android-Lint-Checks](https://github.com/vokal/Android-Lint-Checks) - Contains an RxLifecycle Lint check.
 
 ## License
 
-    Copyright (C) 2015 Trello
+    Copyright (C) 2016 Trello
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
